@@ -25,7 +25,10 @@ class IBabsMeetingItem(
         results = self.api_request(
             self.source_definition['index_name'], 'organizations',
             classification='Council')
-        return results[0]
+        try:
+            return results[0]
+        except IndexError:
+            return []
 
     def _find_meeting_type_id(self, org):
         results = [x for x in org['identifiers'] if x['scheme'] == u'iBabs']
@@ -98,8 +101,11 @@ class IBabsMeetingItem(
             combined_index_data['organization'] = committees[
                 meeting['MeetingtypeId']]
         except KeyError as e:
-            combined_index_data['organization_id'] = council['id']
-            combined_index_data['organization'] = council
+            try:
+                combined_index_data['organization_id'] = council['id']
+                combined_index_data['organization'] = council
+            except:
+                pass
 
         combined_index_data['classification'] = (
             u'Agendapunt' if self.original_item.has_key('MeetingId') else
@@ -109,7 +115,12 @@ class IBabsMeetingItem(
             meeting['MeetingDate'],)
         combined_index_data['end_date'] = iso8601.parse_date(
             meeting['MeetingDate'],)
-        combined_index_data['location'] = meeting['Location'].strip()
+
+        try:
+            combined_index_data['location'] = meeting['Location'].strip()
+        except:
+            pass
+
         combined_index_data['status'] = u'confirmed'
 
         if self.original_item.has_key('MeetingId'):

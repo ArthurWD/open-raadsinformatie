@@ -19,7 +19,7 @@ class CommitteeItem(OrganisationItem):
 
     def get_original_object_urls(self):
         # TODO: we should fix this, but I have no idea how :P
-        return {"html": self.original_item['Meetingtype']}
+        return {"html": ""}  # self.original_item['Meetingtype']}
 
     def get_rights(self):
         return u'undefined'
