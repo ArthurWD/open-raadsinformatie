@@ -26,7 +26,10 @@ class IBabsMotionVotingMixin(
         results = self.api_request(
             self.source_definition['index_name'], 'organizations',
             classification='Council')
-        return results[0]
+        try:
+            return results[0]
+        except:
+            return []
 
     def _get_council_members(self):
         results = self.api_request(self.source_definition['index_name'],
@@ -42,20 +45,26 @@ class IBabsMotionVotingMixin(
         return u'Moties'
 
     def _value(self, key):
-        pprint(self.source_definition['fields']['Moties'])
+        #  pprint(self.source_definition['fields']['Moties'])
         try:
             actual_key = self.source_definition['fields']['Moties']['Extra'][key]
         except KeyError as e:
             actual_key = key
-        return self.original_item['_Extra']['Values'][actual_key]
+        try:
+            return self.original_item['_Extra']['Values'][actual_key]
+        except:
+            return []
 
     def _get_creator(self, creators_str, members, parties):
         # FIXME: currently only does the first. what do we do with the others?
-        creator_str = creators_str.split('), ')[0]
-        print "Looking for : %s" % (creator_str,)
+        try:
+            creator_str = creators_str.split('), ')[0]
+            print "Looking for : %s" % (creator_str,)
 
-        party_match = re.search(r' \(([^\)]*?)$', creator_str)
-        if not party_match:
+            party_match = re.search(r' \(([^\)]*?)$', creator_str)
+            if not party_match:
+                return
+        except:
             return
 
 
@@ -112,18 +121,22 @@ class IBabsMotionVotingMixin(
 
     def _get_motion_id_encoded(self):
         #pprint(self.original_item)
-        normalized_motion_id = normalize_motion_id(
-            self._value('Kenmerk').strip(),
-            self.original_item['datum'][0]
-        )
-        hash_content = u'motion-%s' % (normalized_motion_id,)
+        if self._value('Kenmerk'):
+            motion_id = normalize_motion_id(
+                self._value('Kenmerk').strip(),
+                self.original_item['datum'][0]
+            )
+        else:
+            motion_id = self.get_original_object_id()
+
+        hash_content = u'motion-%s' % (motion_id,)
         return unicode(sha1(hash_content.decode('utf8')).hexdigest())
 
     def get_object_id(self):
         return self._get_motion_id_encoded()
 
     def get_original_object_id(self):
-        return self._get_motion_id_encoded()
+        return self.original_item['id'][0]
 
     def get_original_object_urls(self):
         # FIXME: what to do when there is not an original URL?
@@ -138,15 +151,28 @@ class IBabsMotionVotingMixin(
     def _get_motion_data(self, council, members, parties):
         combined_index_data = {}
 
-        combined_index_data['id'] = unicode(self.get_original_object_id())
+        combined_index_data['id'] = self.get_object_id()
 
         combined_index_data['hidden'] = self.source_definition['hidden']
 
         combined_index_data['name'] = unicode(self._value('Onderwerp'))
 
-        combined_index_data['identifier'] = combined_index_data['id']
+        # combined_index_data['identifiers'] = [
+        #     {
+        #         'identifier': unicode(self.get_original_object_id()),
+        #         'scheme': u'iBabs'
+        #     },
+        #     {
+        #         'identifier': self.get_object_id(),
+        #         'scheme': u'ORI'
+        #     }
+        # ]
 
-        combined_index_data['organization_id'] = council['id']
+        try:
+            combined_index_data['organization_id'] = council['id']
+        except:
+            pass
+
         combined_index_data['organization'] = council
 
         creator = self._get_creator(self._value('Indiener(s)'), members, parties)
@@ -156,17 +182,20 @@ class IBabsMotionVotingMixin(
 
         combined_index_data['classification'] = u'Moties'
 
-        combined_index_data['date'] = iso8601.parse_date(self.original_item['datum'][0],)
-        # TODO: this is only for searching compatability ...
-        combined_index_data['start_date'] = combined_index_data['date']
-        combined_index_data['end_date'] = combined_index_data['date']
+        try:
+            combined_index_data['date'] = iso8601.parse_date(self.original_item['datum'][0],)
+            # TODO: this is only for searching compatability ...
+            combined_index_data['start_date'] = combined_index_data['date']
+            combined_index_data['end_date'] = combined_index_data['date']
 
-        # finding the event where this motion was put to a voting round
-        legislative_session = self._find_legislative_session(
-            combined_index_data['date'], council, members, parties)
-        if legislative_session is not None:
-            combined_index_data['legislative_session_id'] = legislative_session['id']
-            combined_index_data['legislative_session'] = legislative_session
+            # finding the event where this motion was put to a voting round
+            legislative_session = self._find_legislative_session(
+                combined_index_data['date'], council, members, parties)
+            if legislative_session is not None:
+                combined_index_data['legislative_session_id'] = legislative_session['id']
+                combined_index_data['legislative_session'] = legislative_session
+        except:
+            pass
 
         combined_index_data['result'] = self._value('Status')
         combined_index_data['requirement'] = u'majority'

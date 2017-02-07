@@ -15,7 +15,7 @@
         "item": "ocd_backend.items.organisations.MunicipalityOrganisationItem",
         "cleanup": "ocd_backend.tasks.CleanupElasticsearch",
         "hidden": false
-    }, 
+    },
     {
         "extractor": "ocd_backend.extractors.ibabs.IBabsMeetingsExtractor",
         "keep_index_on_update": true,
@@ -58,5 +58,68 @@
         "item": "ocd_backend.items.ibabs_committee.CommitteeItem",
         "cleanup": "ocd_backend.tasks.CleanupElasticsearch",
         "hidden": false
+    },
+    {
+        "id": "oss_motions",
+        "extractor": "ocd_backend.extractors.ibabs.IBabsReportsExtractor",
+        "transformer": "ocd_backend.transformers.BaseTransformer",
+        "item": "ocd_backend.items.ibabs_motion.IBabsMotionItem",
+        "enrichers": [],
+        "loader": "ocd_backend.loaders.ElasticsearchLoader",
+        "cleanup": "ocd_backend.tasks.CleanupElasticsearch",
+        "hidden": false,
+        "index_name": "oss",
+        "doc_type": "motions",
+        "sitename": "Oss",
+        "keep_index_on_update": true,
+        "include": "moties"
+    },
+    {
+        "id": "oss_vote_events",
+        "extractor": "ocd_backend.extractors.ibabs.IBabsReportsExtractor",
+        "transformer": "ocd_backend.transformers.BaseTransformer",
+        "item": "ocd_backend.items.ibabs_motion.IBabsVoteEventItem",
+        "enrichers": [],
+        "loader": "ocd_backend.loaders.ElasticsearchLoader",
+        "cleanup": "ocd_backend.tasks.CleanupElasticsearch",
+        "hidden": false,
+        "index_name": "oss",
+        "doc_type": "vote_events",
+        "sitename": "Oss",
+        "keep_index_on_update": true,
+        "include": "moties",
+        "pdf_max_pages": 20,
+        "max_pages": 1,
+        "per_page": 100,
+        "fields": {
+          "Moties": {
+            "name": "onderwerp",
+            "description": "status",
+            "start_date": "datum"
+          },
+          "Amendementen": {
+            "name": "onderwerp",
+            "description": "status",
+            "start_date": "datum"
+          }
+        }
+    },
+    {
+        "id": "oss_voting_rounds",
+        "extractor": "ocd_backend.extractors.ibabs.IBabsVotesMeetingsExtractor",
+        "transformer": "ocd_backend.transformers.BaseTransformer",
+        "item": "ocd_backend.items.voting_round.IBabsVotingRoundItem",
+        "enrichers": [],
+        "loader": "ocd_backend.loaders.ElasticsearchUpdateOnlyLoader",
+        "cleanup": "ocd_backend.tasks.CleanupElasticsearch",
+        "hidden": false,
+        "wsdl": "https://www.mijnbabs.nl/iBabsWCFServiceTEST/Public.svc?singleWsdl",
+        "index_name": "oss",
+        "doc_type": "vote_events",
+        "sitename": "OssTest",
+        "keep_index_on_update": true,
+        "pdf_max_pages": 20,
+        "start_date": "2016-04-01T00:00:00",
+        "end_date": "2016-06-01T00:00:00"
     }
 ]
